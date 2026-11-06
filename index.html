@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusBite Demo — Campus Pre-Order</title>
+<style>
+  :root {
+    --green: #1f9d55;
+    --green-dark: #167a41;
+    --blue: #2563eb;
+    --blue-dark: #1d4ed8;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --amber-bg: #fef3c7;
+    --amber-border: #f59e0b;
+    --amber-text: #92400e;
+    --infobox-bg: #e0f2fe;
+    --infobox-border: #38bdf8;
+    --infobox-text: #075985;
+    --grey-bg: #f3f4f6;
+    --grey-border: #d1d5db;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --card-border: #d1d5db;
+    --page-bg: #e5e7eb;
+    --phone-bg: #ffffff;
+    --badge-bg: #374151;
+    --focus: #1e40af;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+    color: var(--text);
+    background: var(--page-bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .phone {
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--phone-bg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 40px rgba(0,0,0,0.12);
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--grey-border);
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar .appname { font-weight: 700; font-size: 1rem; }
+  .topbar .badge {
+    font-size: 0.68rem;
+    background: var(--badge-bg);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .screen {
+    flex: 1;
+    padding: 20px 18px 28px;
+    display: none;
+    animation: slidein 0.25s ease;
+  }
+  .screen.active { display: block; }
+  @keyframes slidein {
+    from { opacity: 0; transform: translateX(14px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .screen { animation: none; }
+    .checkmark { animation: none !important; }
+  }
+
+  /* Visible focus indicator for every interactive element */
+  a:focus-visible, button:focus-visible, input:focus-visible,
+  [tabindex]:focus-visible, .radio-row input:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  /* Headings receive focus on screen change but shouldn't show an outline ring */
+  h1:focus, h2:focus { outline: none; }
+
+  .nav-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .back-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 6px 4px 6px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .back-btn:hover { color: var(--text); }
+  .screen-title { font-size: 1.15rem; font-weight: 700; }
+
+  h1.headline { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .subhead { color: var(--text-muted); font-size: 0.98rem; margin-bottom: 18px; }
+
+  .section-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 18px 0 10px;
+  }
+
+  .btn {
+    display: block;
+    width: 100%;
+    border: none;
+    border-radius: var(--radius);
+    padding: 15px 18px;
+    font-size: 1.02rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s, opacity 0.15s;
+    margin-top: 8px;
+  }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { background: var(--green-dark); }
+  .btn-green:disabled { background: #9ca3af; cursor: not-allowed; opacity: 0.8; }
+
+  .link-btn {
+    display: inline-block;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+    cursor: pointer;
+    padding: 12px 4px;
+    text-decoration: underline;
+    width: 100%;
+    text-align: center;
+    margin-top: 4px;
+  }
+  .link-btn:hover { color: var(--text); }
+
+  /* Form fields */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+  }
+  .field .optional { color: var(--text-muted); font-weight: 400; font-size: 0.82rem; }
+  .field .req { color: var(--red); }
+  .field input {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
+  }
+  .field input[aria-invalid="true"] {
+    border-color: var(--red);
+    background: var(--red-bg);
+  }
+  .field .error-msg {
+    color: var(--red);
+    font-size: 0.82rem;
+    margin-top: 5px;
+    min-height: 0;
+    display: none;
+  }
+  .field .error-msg.show { display: block; }
+
+  .infobox {
+    background: var(--infobox-bg);
+    border: 1px solid var(--infobox-border);
+    color: var(--infobox-text);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.86rem;
+    margin-bottom: 18px;
+  }
+  .callout-amber {
+    background: var(--amber-bg);
+    border: 1px solid var(--amber-border);
+    color: var(--amber-text);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.86rem;
+    margin: 18px 0;
+  }
+  .demo-reminder {
+    background: var(--grey-bg);
+    border: 1px solid var(--grey-border);
+    color: var(--text-muted);
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 0.85rem;
+    margin: 16px 0;
+    text-align: center;
+  }
+
+  /* Menu items */
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .menu-item .emoji { font-size: 1.8rem; width: 40px; text-align: center; flex-shrink: 0; }
+  .menu-item .mi-info { flex: 1; min-width: 0; }
+  .menu-item .mi-name { font-weight: 700; font-size: 0.98rem; }
+  .menu-item .mi-price { color: var(--text-muted); font-size: 0.9rem; }
+
+  .qty { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .qty button {
+    width: 34px; height: 34px; border-radius: 8px;
+    border: 1px solid var(--card-border); background: #fff;
+    font-size: 1.2rem; font-weight: 700; cursor: pointer;
+    color: var(--text); line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qty button:hover { background: var(--grey-bg); }
+  .qty button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .qty .count { min-width: 20px; text-align: center; font-weight: 700; font-size: 1rem; }
+
+  .cart-bar {
+    position: sticky; bottom: 0; background: #fff;
+    border-top: 1px solid var(--grey-border);
+    padding: 12px 0 2px; margin-top: 8px;
+  }
+  .cart-total-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 1rem; margin-bottom: 4px;
+  }
+  .cart-total-row .amt { font-weight: 800; font-size: 1.2rem; }
+
+  .review-line {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid #eef0f2; font-size: 0.98rem;
+  }
+  .review-line .rl-name { flex: 1; }
+  .review-line .rl-qty { color: var(--text-muted); }
+  .review-line .rl-sub { font-weight: 700; white-space: nowrap; }
+  .total-line {
+    display: flex; justify-content: space-between;
+    padding: 14px 0 4px; font-size: 1.1rem; font-weight: 800;
+  }
+
+  .detail-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; font-size: 1rem; }
+  .detail-row .icon { font-size: 1.1rem; line-height: 1.4; }
+  .detail-row .label { font-weight: 600; }
+
+  .name-chip {
+    background: var(--grey-bg); border: 1px solid var(--grey-border);
+    border-radius: 10px; padding: 10px 14px; font-size: 0.95rem; margin-bottom: 8px;
+  }
+  .name-chip .label { font-weight: 600; }
+
+  .note-italic { color: var(--text-muted); font-style: italic; font-size: 0.88rem; margin: 6px 0 2px; }
+
+  .fit-verdict {
+    display: flex; align-items: flex-start; gap: 10px;
+    border-radius: 10px; padding: 12px 14px; font-size: 0.92rem; font-weight: 600;
+    margin: 16px 0; background: #dcfce7; border: 1px solid var(--green); color: var(--green-dark);
+  }
+  .fit-verdict .icon { font-size: 1.05rem; line-height: 1.35; }
+  .fit-verdict.tight { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber-text); }
+
+  fieldset { border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+  legend { font-weight: 700; font-size: 0.92rem; padding: 0 6px; }
+  .radio-row { display: flex; align-items: center; gap: 10px; padding: 10px 4px; cursor: pointer; }
+  .radio-row + .radio-row { border-top: 1px solid #eef0f2; }
+  .radio-row input[type="radio"] { width: 20px; height: 20px; accent-color: var(--green); cursor: pointer; }
+  .radio-row label { cursor: pointer; font-size: 0.98rem; flex: 1; }
+
+  .confirm-wrap { text-align: center; }
+  .checkmark {
+    width: 72px; height: 72px; margin: 6px auto 16px;
+    animation: pop-in 0.35s ease; transform-origin: center;
+  }
+  .checkmark circle, .checkmark path { stroke: var(--green); fill: none; }
+  .checkmark circle { stroke-width: 4; }
+  .checkmark path { stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes pop-in {
+    from { transform: scale(0.6); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  .pickup-hero {
+    border: 2px solid var(--green); border-radius: var(--radius);
+    padding: 18px 16px; margin: 16px 0; background: #f0fdf4; text-align: center;
+  }
+  .pickup-hero .code-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 700; }
+  .pickup-hero .code { font-size: 2rem; font-weight: 800; letter-spacing: 0.06em; color: var(--green-dark); margin: 2px 0 12px; }
+  .pickup-hero .hero-row { display: flex; justify-content: center; gap: 8px; align-items: center; font-size: 1.05rem; font-weight: 700; margin-top: 4px; }
+  .pickup-hero .hero-sub { font-size: 0.9rem; color: var(--text-muted); font-weight: 400; margin-top: 2px; }
+
+  .receipt { border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px 16px; text-align: left; margin: 8px 0; }
+  .receipt .r-head { font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
+
+  .footer-micro { text-align: center; color: var(--text-muted); font-size: 0.76rem; margin-top: 18px; padding-top: 14px; border-top: 1px solid #eef0f2; }
+
+  .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+</style>
+</head>
+<body>
+<div class="phone" role="application" aria-label="CampusBite campus pre-order demo">
+
+  <div class="topbar">
+    <span class="appname">CampusBite Demo</span>
+    <span class="badge">Prototype — not a live service</span>
+  </div>
+
+  <!-- ===================== SCREEN 1: DETAILS ===================== -->
+  <section class="screen active" id="screen-details" aria-labelledby="details-h">
+    <h1 class="headline" id="details-h" tabindex="-1">Pick up lunch between classes</h1>
+    <p class="subhead" style="margin-bottom:4px;">A conceptual simulation by a group of GMBA students for a marketing course at Tunghai University.</p>
+
+    <div class="infobox" style="margin-top:14px;">ℹ️ This is a demo. Please use fictional contact details. Your entries are kept in memory for this demo only and are not saved or sent anywhere.</div>
+
+    <h2 class="section-label" style="margin-top:4px;" id="details-form-h">Your details</h2>
+    <form id="details-form" novalidate aria-describedby="details-form-h">
+      <div class="field">
+        <label for="f-name">Full name <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="f-name" name="name" autocomplete="off" placeholder="e.g. Chen Mei-Ling"
+               aria-required="true" aria-describedby="err-name">
+        <div class="error-msg" id="err-name" role="alert"></div>
+      </div>
+      <div class="field">
+        <label for="f-phone">Phone number <span class="req" aria-hidden="true">*</span></label>
+        <input type="tel" id="f-phone" name="phone" autocomplete="off" placeholder="e.g. 0912-345-678 or +886 912 345 678"
+               aria-required="true" aria-describedby="err-phone">
+        <div class="error-msg" id="err-phone" role="alert"></div>
+      </div>
+      <div class="field">
+        <label for="f-email">Email <span class="req" aria-hidden="true">*</span></label>
+        <input type="email" id="f-email" name="email" autocomplete="off" placeholder="e.g. student@demo.test"
+               aria-required="true" aria-describedby="err-email">
+        <div class="error-msg" id="err-email" role="alert"></div>
+      </div>
+      <div class="field">
+        <label for="f-classroom">Classroom <span class="optional">(optional for this store-pickup demo)</span></label>
+        <input type="text" id="f-classroom" name="classroom" autocomplete="off" placeholder="e.g. MGT Building, Room 204"
+               aria-describedby="err-classroom">
+        <div class="error-msg" id="err-classroom" role="alert"></div>
+      </div>
+
+      <button type="submit" class="btn btn-green" id="btn-details-submit">Browse 7-Eleven items</button>
+    </form>
+
+    <p class="footer-micro">Demo only · Sample 7-Eleven menu · No payment · No real order placed</p>
+  </section>
+
+  <!-- ===================== SCREEN 2: MENU ===================== -->
+  <section class="screen" id="screen-menu" aria-labelledby="menu-h">
+    <div class="nav-row">
+      <button class="back-btn" data-goto="screen-details" aria-label="Back to your details">‹ Back</button>
+    </div>
+    <h2 class="screen-title" id="menu-h" tabindex="-1">Sample 7-Eleven menu</h2>
+
+    <div class="infobox" style="margin-top:12px;">ℹ️ Sample menu with illustrative prices — not live inventory, and not an official 7-Eleven partnership. Mix food and drinks freely.</div>
+
+    <div id="menu-list" aria-label="Menu items"></div>
+
+    <div class="cart-bar">
+      <div class="cart-total-row">
+        <span>Cart total</span>
+        <span class="amt" id="menu-cart-total">NT$0</span>
+      </div>
+      <button class="btn btn-green" id="btn-review" disabled>Review order</button>
+      <p class="note-italic" id="cart-hint" style="text-align:center;">Add at least one item to continue.</p>
+    </div>
+  </section>
+
+  <!-- ===================== SCREEN 3: REVIEW ===================== -->
+  <section class="screen" id="screen-review" aria-labelledby="review-h">
+    <div class="nav-row">
+      <button class="back-btn" data-goto="screen-menu" aria-label="Back to menu">‹ Back</button>
+    </div>
+    <h2 class="screen-title" id="review-h" tabindex="-1">Review order &amp; pickup</h2>
+
+    <div class="name-chip">
+      <span class="label">Name on order:</span> <span id="review-name">—</span>
+    </div>
+
+    <p class="section-label">Your items</p>
+    <div id="review-items"></div>
+    <div class="total-line">
+      <span>Order total</span>
+      <span id="review-total">NT$0</span>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:12px;">
+      <button class="link-btn" style="text-decoration:underline;" id="btn-edit-details">Edit details</button>
+      <button class="link-btn" style="text-decoration:underline;" data-goto="screen-menu">Edit cart</button>
+    </div>
+
+    <p class="section-label">Pickup</p>
+    <div class="detail-row">
+      <span class="icon" aria-hidden="true">🏪</span>
+      <span><span class="label">7-Eleven pickup counter</span> · Campus Store, front counter</span>
+    </div>
+
+    <form id="slot-form" style="margin-top:8px;">
+      <fieldset>
+        <legend>Choose a pickup time</legend>
+        <div class="radio-row">
+          <input type="radio" id="slot-1205" name="slot" value="12:05" checked>
+          <label for="slot-1205">12:05 — earliest slot</label>
+        </div>
+        <div class="radio-row">
+          <input type="radio" id="slot-1208" name="slot" value="12:08">
+          <label for="slot-1208">12:08</label>
+        </div>
+        <div class="radio-row">
+          <input type="radio" id="slot-1212" name="slot" value="12:12">
+          <label for="slot-1212">12:12</label>
+        </div>
+      </fieldset>
+    </form>
+
+    <div class="fit-verdict" id="fit-verdict" role="status">
+      <span class="icon" aria-hidden="true">🕐</span>
+      <span id="fit-verdict-text">—</span>
+    </div>
+
+    <p class="section-label">Payment method</p>
+    <form id="payment-form">
+      <fieldset id="payment-fieldset">
+        <legend>How you'd pay at pickup (demo — you won't be charged)</legend>
+      </fieldset>
+    </form>
+    <p class="note-italic">Demo only — no payment is taken and no card or account details are collected.</p>
+
+    <div class="callout-amber">⚠️ In this demo, pickup times are illustrative. A real system would calculate availability from queue length and kitchen load — the demo does not promise any wait time.</div>
+
+    <button class="btn btn-green" id="btn-confirm">Confirm demo order</button>
+  </section>
+
+  <!-- ===================== SCREEN 4: CONFIRMATION ===================== -->
+  <section class="screen" id="screen-confirm" aria-labelledby="confirm-h">
+    <div class="confirm-wrap">
+      <svg class="checkmark" viewBox="0 0 100 100" role="img" aria-label="Confirmed">
+        <circle cx="50" cy="50" r="40"/>
+        <path d="M30 52 L45 66 L72 36"/>
+      </svg>
+
+      <h2 class="headline" id="confirm-h" tabindex="-1" style="font-size:1.35rem;">Demo order confirmed!</h2>
+      <p class="subhead">Here's what a real confirmation could look like.</p>
+
+      <div class="pickup-hero">
+        <div class="code-label">Pickup code</div>
+        <div class="code" id="confirm-code">7E-0000</div>
+        <div class="hero-row">
+          <span aria-hidden="true">🕐</span>
+          <span>Collect at <span id="confirm-time">12:05</span></span>
+        </div>
+        <div class="hero-row">
+          <span aria-hidden="true">🏪</span>
+          <span>7-Eleven · Campus Store, front counter</span>
+        </div>
+        <div class="hero-sub">Show this screen at the counter.</div>
+      </div>
+
+      <div class="receipt">
+        <div class="r-head">Demo receipt</div>
+        <div class="detail-row" style="padding:4px 0;">
+          <span class="icon" aria-hidden="true">👤</span>
+          <span><span class="label">Name:</span> <span id="confirm-name">—</span></span>
+        </div>
+        <div id="confirm-items" style="margin-top:6px;"></div>
+        <div class="total-line" style="font-size:1rem;">
+          <span>Total</span>
+          <span id="confirm-total">NT$0</span>
+        </div>
+        <div class="detail-row" style="padding:6px 0 0;">
+          <span class="icon" aria-hidden="true">💳</span>
+          <span><span class="label">Payment:</span> <span id="confirm-payment">—</span> <span style="color:var(--text-muted);">(demo — not charged)</span></span>
+        </div>
+      </div>
+
+      <div class="demo-reminder">This is a demo order. No real order was placed, no payment was taken, and the pickup code is for illustration only.</div>
+
+      <button class="link-btn" id="btn-restart">Start over</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // ============================================================
+  //  SAMPLE DATA — fictional 7-Eleven-style menu, illustrative NT$ prices.
+  // ============================================================
+  const MENU = [
+    { id: "sandwich",  name: "Egg salad sandwich", emoji: "🥪", price: 45 },
+    { id: "hotdog",    name: "Classic hot dog",    emoji: "🌭", price: 40 },
+    { id: "riceball",  name: "Tuna rice ball (飯糰)", emoji: "🍙", price: 30 },
+    { id: "milktea",   name: "Milk tea",           emoji: "🧋", price: 35 },
+    { id: "coffee",    name: "City Cafe coffee",   emoji: "☕", price: 45 },
+    { id: "water",     name: "Bottled water",      emoji: "💧", price: 20 }
+  ];
+
+  // Seven simulated pay-at-pickup methods (demo only — no transaction).
+  const PAYMENTS = [
+    { id: "linepay",  name: "LINE Pay" },
+    { id: "jkopay",   name: "JKOPAY (街口支付)" },
+    { id: "easycard", name: "EasyCard (悠遊卡)" },
+    { id: "icashpay", name: "icash Pay" },
+    { id: "applepay", name: "Apple Pay" },
+    { id: "card",     name: "Card" },
+    { id: "cash",     name: "Cash" }
+  ];
+
+  const DEFAULTS = () => ({
+    details: { name: "", phone: "", email: "", classroom: "" },
+    cart: {},
+    slot: "12:05",
+    payment: "linepay"
+  });
+
+  // Live demo state (memory only — nothing is saved or sent)
+  let state = DEFAULTS();
+
+  // Tracks whether the details form was opened via "Edit details" from review.
+  let editingDetails = false;
+
+  const CLASS_START_MIN = 12 * 60 + 15; // 12:15
+
+  // ---------- helpers ----------
+  function nt(n) { return "NT$" + n; }
+  function toMin(hhmm) { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; }
+  function cartLines() {
+    return MENU.filter(m => (state.cart[m.id] || 0) > 0)
+               .map(m => ({ ...m, qty: state.cart[m.id], subtotal: m.price * state.cart[m.id] }));
+  }
+  function cartTotal() { return cartLines().reduce((s, l) => s + l.subtotal, 0); }
+  function cartCount() { return cartLines().reduce((s, l) => s + l.qty, 0); }
+  function paymentName(id) { const pm = PAYMENTS.find(p => p.id === id); return pm ? pm.name : id; }
+
+  // Move focus to a screen's main heading so AT announces the new step.
+  function focusHeading(screenId) {
+    const map = {
+      "screen-details": "details-h",
+      "screen-menu": "menu-h",
+      "screen-review": "review-h",
+      "screen-confirm": "confirm-h"
+    };
+    const h = document.getElementById(map[screenId]);
+    if (h) { h.focus(); }
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    window.scrollTo(0, 0);
+    focusHeading(id);
+  }
+
+  // Plain [data-goto] navigation (Back links, Edit cart)
+  document.querySelectorAll("[data-goto]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.goto;
+      if (target === "screen-review") renderReview();
+      if (target === "screen-menu") renderMenu();
+      showScreen(target);
+    });
+  });
+
+  // ============================================================
+  //  SCREEN 1: details + validation
+  // ============================================================
+  const DETAIL_FIELDS = { "f-name": "name", "f-phone": "phone", "f-email": "email", "f-classroom": "classroom" };
+
+  function captureDetails() {
+    for (const [inputId, key] of Object.entries(DETAIL_FIELDS)) {
+      state.details[key] = document.getElementById(inputId).value.trim();
+    }
+  }
+  // live capture on each keystroke
+  Object.keys(DETAIL_FIELDS).forEach(inputId => {
+    document.getElementById(inputId).addEventListener("input", (e) => {
+      state.details[DETAIL_FIELDS[inputId]] = e.target.value.trim();
+      // clear a field's error as soon as the student edits it
+      clearFieldError(inputId);
+    });
+  });
+
+  // Prefill inputs from state (used when returning via Edit details)
+  function fillDetailsForm() {
+    for (const [inputId, key] of Object.entries(DETAIL_FIELDS)) {
+      document.getElementById(inputId).value = state.details[key] || "";
+    }
+  }
+
+  // --- validators ---
+  // Email: basic but strict-enough RFC-ish shape (no spaces, single @, dot in domain).
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Phone: digits plus common separators; optional leading +; must contain digits
+  // and no letters. Allows spaces, hyphens, parentheses.
+  function phoneValid(v) {
+    if (/[A-Za-z]/.test(v)) return false;            // reject any letters
+    if (!/\d/.test(v)) return false;                 // must have digits
+    if (!/^\+?[0-9()\-\s]+$/.test(v)) return false;  // only allowed characters
+    const digits = v.replace(/\D/g, "");
+    return digits.length >= 7 && digits.length <= 15; // sane international range
+  }
+
+  function setFieldError(inputId, msg) {
+    const input = document.getElementById(inputId);
+    const err = document.getElementById("err-" + DETAIL_FIELDS[inputId]);
+    input.setAttribute("aria-invalid", "true");
+    err.textContent = msg;
+    err.classList.add("show");
+  }
+  function clearFieldError(inputId) {
+    const input = document.getElementById(inputId);
+    const err = document.getElementById("err-" + DETAIL_FIELDS[inputId]);
+    input.removeAttribute("aria-invalid");
+    err.textContent = "";
+    err.classList.remove("show");
+  }
+
+  // Returns the id of the first invalid input, or null if all valid.
+  function validateDetails() {
+    captureDetails();
+    ["f-name","f-phone","f-email"].forEach(clearFieldError);
+    let firstInvalid = null;
+
+    if (!state.details.name) {
+      setFieldError("f-name", "Please enter your full name.");
+      firstInvalid = firstInvalid || "f-name";
+    }
+    if (!state.details.phone) {
+      setFieldError("f-phone", "Please enter a phone number.");
+      firstInvalid = firstInvalid || "f-phone";
+    } else if (!phoneValid(state.details.phone)) {
+      setFieldError("f-phone", "Enter a valid phone number (digits only; + - ( ) and spaces allowed).");
+      firstInvalid = firstInvalid || "f-phone";
+    }
+    if (!state.details.email) {
+      setFieldError("f-email", "Please enter an email address.");
+      firstInvalid = firstInvalid || "f-email";
+    } else if (!EMAIL_RE.test(state.details.email)) {
+      setFieldError("f-email", "Enter a valid email address, e.g. name@example.com.");
+      firstInvalid = firstInvalid || "f-email";
+    }
+    return firstInvalid;
+  }
+
+  // Submit handler (fires on button click AND Enter key within the form)
+  document.getElementById("details-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const firstInvalid = validateDetails();
+    if (firstInvalid) {
+      document.getElementById(firstInvalid).focus();
+      return;
+    }
+    if (editingDetails) {
+      editingDetails = false;
+      setDetailsButton(false);
+      renderReview();
+      showScreen("screen-review");
+    } else {
+      renderMenu();
+      showScreen("screen-menu");
+    }
+  });
+
+  function setDetailsButton(isEditing) {
+    document.getElementById("btn-details-submit").textContent =
+      isEditing ? "Save and return to order" : "Browse 7-Eleven items";
+  }
+
+  // "Edit details" from review: prefill, switch button, go to details.
+  document.getElementById("btn-edit-details").addEventListener("click", () => {
+    editingDetails = true;
+    fillDetailsForm();
+    setDetailsButton(true);
+    ["f-name","f-phone","f-email","f-classroom"].forEach(clearFieldError);
+    showScreen("screen-details");
+  });
+
+  // ============================================================
+  //  SCREEN 2: menu + cart
+  // ============================================================
+  function renderMenu() {
+    const list = document.getElementById("menu-list");
+    list.innerHTML = "";
+    MENU.forEach(item => {
+      const qty = state.cart[item.id] || 0;
+      const row = document.createElement("div");
+      row.className = "menu-item";
+      row.innerHTML = `
+        <span class="emoji" aria-hidden="true">${item.emoji}</span>
+        <div class="mi-info">
+          <div class="mi-name">${item.name}</div>
+          <div class="mi-price">${nt(item.price)}</div>
+        </div>
+        <div class="qty" role="group" aria-label="Quantity for ${item.name}">
+          <button type="button" data-dec="${item.id}" aria-label="Remove one ${item.name}" ${qty === 0 ? "disabled" : ""}>−</button>
+          <span class="count" id="count-${item.id}" aria-live="polite">${qty}</span>
+          <button type="button" data-inc="${item.id}" aria-label="Add one ${item.name}">+</button>
+        </div>`;
+      list.appendChild(row);
+    });
+    updateCartBar();
+  }
+
+  function updateCartBar() {
+    document.getElementById("menu-cart-total").textContent = nt(cartTotal());
+    const reviewBtn = document.getElementById("btn-review");
+    const hint = document.getElementById("cart-hint");
+    const has = cartCount() > 0;
+    reviewBtn.disabled = !has;
+    hint.style.display = has ? "none" : "block";
+  }
+
+  document.getElementById("menu-list").addEventListener("click", (e) => {
+    const inc = e.target.closest("[data-inc]");
+    const dec = e.target.closest("[data-dec]");
+    let changedId = null;
+    if (inc) {
+      changedId = inc.dataset.inc;
+      state.cart[changedId] = (state.cart[changedId] || 0) + 1;
+    } else if (dec) {
+      changedId = dec.dataset.dec;
+      state.cart[changedId] = Math.max(0, (state.cart[changedId] || 0) - 1);
+      if (state.cart[changedId] === 0) delete state.cart[changedId];
+    } else { return; }
+    const countEl = document.getElementById("count-" + changedId);
+    if (countEl) countEl.textContent = state.cart[changedId] || 0;
+    const decBtn = document.querySelector(`[data-dec="${changedId}"]`);
+    if (decBtn) decBtn.disabled = (state.cart[changedId] || 0) === 0;
+    updateCartBar();
+  });
+
+  document.getElementById("btn-review").addEventListener("click", () => {
+    if (cartCount() === 0) return; // guard: empty cart cannot proceed
+    renderReview();
+    showScreen("screen-review");
+  });
+
+  // ============================================================
+  //  SCREEN 3: review + pickup + payment
+  // ============================================================
+  function renderReview() {
+    document.getElementById("review-name").textContent = state.details.name || "(no name entered)";
+
+    const wrap = document.getElementById("review-items");
+    wrap.innerHTML = "";
+    cartLines().forEach(l => {
+      const row = document.createElement("div");
+      row.className = "review-line";
+      row.innerHTML = `
+        <span class="rl-name">${l.emoji} ${l.name} <span class="rl-qty">×${l.qty}</span></span>
+        <span class="rl-sub">${nt(l.subtotal)}</span>`;
+      wrap.appendChild(row);
+    });
+    document.getElementById("review-total").textContent = nt(cartTotal());
+
+    // pickup slot: keep current selection in sync
+    const chosen = document.querySelector('input[name="slot"]:checked');
+    if (chosen) { state.slot = chosen.value; } else {
+      const el = document.getElementById("slot-" + state.slot.replace(":", ""));
+      if (el) el.checked = true;
+    }
+    updateGap(state.slot);
+
+    renderPayments();
+  }
+
+  function updateGap(slot) {
+    const box = document.getElementById("fit-verdict");
+    const txt = document.getElementById("fit-verdict-text");
+    const icon = box.querySelector(".icon");
+    const gap = CLASS_START_MIN - toMin(slot);
+    if (gap >= 0) {
+      box.classList.remove("tight");
+      icon.textContent = "🕐";
+      txt.textContent = `${gap} minute${gap === 1 ? "" : "s"} between pickup and your 12:15 class.`;
+    } else {
+      box.classList.add("tight");
+      icon.textContent = "⚠️";
+      txt.textContent = `Pickup at ${slot} is after your 12:15 class starts.`;
+    }
+  }
+
+  document.getElementById("slot-form").addEventListener("change", () => {
+    const chosen = document.querySelector('input[name="slot"]:checked').value;
+    state.slot = chosen;
+    updateGap(chosen);
+  });
+
+  function renderPayments() {
+    const fs = document.getElementById("payment-fieldset");
+    fs.querySelectorAll(".radio-row").forEach(r => r.remove());
+    PAYMENTS.forEach(pm => {
+      const row = document.createElement("div");
+      row.className = "radio-row";
+      const checked = pm.id === state.payment ? "checked" : "";
+      row.innerHTML = `
+        <input type="radio" id="pay-${pm.id}" name="payment" value="${pm.id}" ${checked}>
+        <label for="pay-${pm.id}">${pm.name}</label>`;
+      fs.appendChild(row);
+    });
+  }
+
+  document.getElementById("payment-form").addEventListener("change", () => {
+    const chosen = document.querySelector('input[name="payment"]:checked');
+    if (chosen) state.payment = chosen.value;
+  });
+
+  // ---------- confirm ----------
+  document.getElementById("btn-confirm").addEventListener("click", () => {
+    if (cartCount() === 0) return;
+    state.slot = (document.querySelector('input[name="slot"]:checked') || {}).value || state.slot;
+    const code = "7E-" + Math.floor(1000 + Math.random() * 9000);
+
+    document.getElementById("confirm-code").textContent = code;
+    document.getElementById("confirm-time").textContent = state.slot;
+    document.getElementById("confirm-name").textContent = state.details.name || "(no name entered)";
+
+    const wrap = document.getElementById("confirm-items");
+    wrap.innerHTML = "";
+    cartLines().forEach(l => {
+      const row = document.createElement("div");
+      row.className = "review-line";
+      row.innerHTML = `
+        <span class="rl-name">${l.emoji} ${l.name} <span class="rl-qty">×${l.qty}</span></span>
+        <span class="rl-sub">${nt(l.subtotal)}</span>`;
+      wrap.appendChild(row);
+    });
+    document.getElementById("confirm-total").textContent = nt(cartTotal());
+    document.getElementById("confirm-payment").textContent = paymentName(state.payment);
+
+    showScreen("screen-confirm");
+  });
+
+  // ---------- Start over ----------
+  document.getElementById("btn-restart").addEventListener("click", () => {
+    state = DEFAULTS();
+    editingDetails = false;
+    setDetailsButton(false);
+    ["f-name","f-phone","f-email","f-classroom"].forEach(id => {
+      document.getElementById(id).value = "";
+      clearFieldError(id);
+    });
+    document.getElementById("slot-1205").checked = true;
+    renderMenu();
+    showScreen("screen-details");
+  });
+
+  // initial paint
+  renderMenu();
+  // focus the first screen's heading on load
+  focusHeading("screen-details");
+</script>
+</body>
+</html>
